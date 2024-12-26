@@ -1,0 +1,3 @@
+/home/sirius/NX/build/CMakeFiles/NX.dir
+/home/sirius/NX/build/CMakeFiles/edit_cache.dir
+/home/sirius/NX/build/CMakeFiles/rebuild_cache.dir

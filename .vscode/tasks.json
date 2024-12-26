@@ -1,0 +1,33 @@
+{
+    "tasks": [
+        {
+            "label": "build",       // build 操作
+            "dependsOn":[
+                "cmake",            // build 操作依赖于 cmake 和 make 操作
+                "make"
+            ]
+        },
+        {
+            "label": "cmake",         // cmake 操作
+            "type":"shell",           
+            "command":"cmake",        // 执行 cmake 操作所使用的命令
+            "args": [                 // cmake 命令执行时的命令行参数
+                "-G MinGW Makefiles", // 生成 mingw32-make 能够编译的Makefile
+                "../"
+            ],
+        },
+        {
+            "label": "make",                // make 操作
+            "command":"mingw32-make.exe",   // 执行 make 操作所使用的命令(mingw32-make.exe已经添加了环境变量)
+            "args": [
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}/build"     // 表示执行当前操作的工作目录
+            }
+        },
+    ],
+    "version": "2.0.0",
+    "options": {
+        "cwd": "${workspaceFolder}/build"     // 表示执行上述操作时的工作目录
+    },
+}

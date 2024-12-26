@@ -1,0 +1,1 @@
+/usr/bin/c++ CMakeFiles/NX.dir/backend/src/main_app2.cpp.o CMakeFiles/NX.dir/backend/src/pugixml.cpp.o -o NX 
