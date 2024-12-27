@@ -32,13 +32,6 @@ struct EDGE{
     int size(){ return cnt;}
 } graph;
 
-// 计算两点之间的距离（使用简化的欧氏距离）
-inline float calculate_distance(const Node& a, const Node& b) {
-    float dx = a.lat - b.lat;
-    float dy = a.lon - b.lon;
-    return std::sqrt(dx * dx + dy * dy);
-}
-
 // 构建图的邻接表
 void build_graph() {
     graph.clear();
