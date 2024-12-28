@@ -1,56 +1,497 @@
-<!-- ws_test.html -->
-
-<!DOCTYPE html>
+<!doctype html>
 <html>
 <head>
-    <meta charset="UTF-8">
-    <title>Crow WebSocket Test</title>
+    <meta charset="utf-8">
+    <title>NX</title>
+    <!-- Leaflet CSS -->
+    <link
+        rel="stylesheet"
+        href="https://unpkg.com/leaflet@1.9.3/dist/leaflet.css"
+        integrity="sha256-kLaT2GOSpHechhsozzB+flnD+zUyjE2LlfWPgU04xyI="
+        crossorigin=""
+    />
+    <!-- Leaflet.EasyButton CSS -->
+    <link
+        rel="stylesheet"
+        href="https://cdn.jsdelivr.net/npm/leaflet-easybutton@2/src/easy-button.css"
+    />
+    <!-- Font Awesome CSS -->
+    <link
+        rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+        crossorigin="anonymous"
+        referrerpolicy="no-referrer"
+    />
+
+    <!-- Toastr CSS -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css" />
+          <!-- jQuery -->
+          <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    
+    <!-- Turf -->
+    <script src="https://cdn.jsdelivr.net/npm/@turf/turf@6/turf.min.js"></script>
+    <style>
+        html, body {
+            width: 100%;
+            height: 100%;
+            margin: 0;
+            font-family: Arial, sans-serif;
+        }
+        #mapDiv {
+            width: 100%;
+            height: 100%;
+        }
+        /* 控制面板样式 */
+        .control-panel {
+            position: absolute;
+            top: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: rgba(255, 255, 255, 0.9);
+            padding: 10px 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            z-index: 1000;
+        }
+        /* 时间显示面板 */
+        #timePanel {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: rgba(255, 255, 255, 0.9);
+            padding: 8px 16px;
+            border-radius: 8px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+            font-size: 14px;
+            z-index: 1000;
+        }
+        /* 算法选择和滑块样式 */
+        .control-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .control-group label {
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        .control-group input[type="range"] {
+            width: 150px;
+        }
+        .control-group span {
+            width: 40px;
+            text-align: right;
+            font-weight: bold;
+        }
+        /* 滑块禁用样式 */
+        .control-group input[type="range"]:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        /* 加载指示器样式 */
+        #loadingIndicator {
+            display: none;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 1001;
+            background-color: rgba(255, 255, 255, 0.8);
+            padding: 20px;
+            border-radius: 8px;
+            text-align: center;
+        }
+    </style>
 </head>
 <body>
-    <h1>Crow WebSocket Test</h1>
-    <button id="connect">Connect WebSocket</button>
-    <button id="send">Send Message</button>
-    <button id="close">Close WebSocket</button>
-    <div id="messages"></div>
 
-    <script>
-        let ws;
+<div id="timePanel">
+    本次规划耗时：<span id="routeTime"></span>
+    <br>
+    距离：<span id="routeDistance">-</span>
+</div>
 
-        document.getElementById('connect').addEventListener('click', () => {
-            ws = new WebSocket('ws://localhost:8080/ws');
+<div id="mapDiv"></div>
 
-            ws.onopen = () => {
-                document.getElementById('messages').innerHTML += '<p>WebSocket connected.</p>';
-            };
+<div class="control-panel">
+        <!-- 算法模式选择下拉框 -->
+    <div class="control-group">
+        <label for="modeSelect"><i class="fa fa-cogs"></i> 算法模式：</label>
+        <select id="modeSelect">
+            <option value="1">Dijkstra</option>
+            <option value="2">单向A*</option>
+            <option value="3">单向A*+fib</option>
+            <option value="4">双向A*</option>
+        </select>
+    </div>
 
-            ws.onmessage = (event) => {
-                document.getElementById('messages').innerHTML += `<p>Received: ${event.data}</p>`;
-            };
+    <!-- 启发式系数滑块 -->
+    <div class="control-group">
+        <label for="heuristicSlider"><i class="fa fa-sliders-h"></i> 启发式系数：</label>
+        <input type="range" id="heuristicSlider" min="0" max="20" step="0.1" value="2.5">
+        <span id="heuristicValue">1</span>
+    </div>
+</div>
 
-            ws.onclose = () => {
-                document.getElementById('messages').innerHTML += '<p>WebSocket disconnected.</p>';
-            };
+<!-- 加载指示器 -->
+<div id="loadingIndicator">
+    <i class="fa fa-spinner fa-spin fa-3x fa-fw"></i>
+    <span class="sr-only">加载中...</span>
+</div>
 
-            ws.onerror = (error) => {
-                console.error('WebSocket error:', error);
-            };
-        });
+<script
+    src="https://unpkg.com/leaflet@1.9.3/dist/leaflet.js"
+    integrity="sha256-WBkoXOwTeyKclOHuWtc+i2uENFpDZ9YPdf5Hf+D7ewM="
+    crossorigin=""
+></script>
+<!-- Leaflet.EasyButton JS -->
+<script
+    src="https://cdn.jsdelivr.net/npm/leaflet-easybutton@2/src/easy-button.js"
+></script>
 
-        document.getElementById('send').addEventListener('click', () => {
-            if (ws && ws.readyState === WebSocket.OPEN) {
-                const message = 'Hello from client!';
-                ws.send(message);
-                document.getElementById('messages').innerHTML += `<p>Sent: ${message}</p>`;
+<!-- Toastr JS -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
+
+
+<script>
+    
+    // 创建地图
+    var initialCoords = [31.30021, 121.49918]; // 初始中心点
+    var initialZoom = 15;                     // 初始缩放级别
+    var display_search = 0;
+    var map = L.map('mapDiv').setView(initialCoords, initialZoom);
+
+    L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 19,
+        attribution: '&copy; <a href=\"http://www.openstreetmap.org/copyright\">OpenStreetMap</a>'
+    }).addTo(map);
+
+    var greenIcon = new L.Icon({
+        iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-green.png',
+        shadowUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-shadow.png',
+        iconSize:    [25, 41],
+        iconAnchor:  [12, 41],
+        popupAnchor: [1, -34],
+        shadowSize:  [41, 41]
+    });
+
+    var redIcon = new L.Icon({
+        iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png',
+        shadowUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-shadow.png',
+        iconSize:    [25, 41],
+        iconAnchor:  [12, 41],
+        popupAnchor: [1, -34],
+        shadowSize:  [41, 41]
+    });
+
+    L.easyButton('fa-map-marker-alt', function(btn, map){
+            if (!clickedCoords) {
+                showWarning('请先点击地图选取一个坐标，再选择起点。', '警告');
+                return;
+            }
+            if (startMarker) {
+                map.removeLayer(startMarker);
+            }
+            startMarker = L.marker(clickedCoords, { icon: greenIcon }).addTo(map)
+                .bindPopup("起点")
+                .openPopup();
+            startCoords = clickedCoords;
+            console.log('起点已设定：', startCoords);
+        }, '选择起点').addTo(map);
+
+        // 选择终点按钮
+        L.easyButton('fa-map-marker', function(btn, map){
+            if (!clickedCoords) {
+                show_warning('请先点击地图选取一个坐标，再选择终点。', '警告');
+                return;
+            }
+            if (endMarker) {
+                map.removeLayer(endMarker);
+            }
+            endMarker = L.marker(clickedCoords, { icon: redIcon }).addTo(map)
+                .bindPopup("终点")
+                .openPopup();
+            endCoords = clickedCoords;
+            console.log('终点已设定：', endCoords);
+        }, '选择终点').addTo(map);
+
+        // Home按钮
+        L.easyButton('fa-home', function(btn, map){
+            map.setView(initialCoords, initialZoom);
+        }, 'Home').addTo(map);
+
+        // 清空标记按钮
+        L.easyButton('fa-trash', function(btn, map){
+            if (startMarker) {
+                map.removeLayer(startMarker);
+                startMarker = null;
+            }
+            if (endMarker) {
+                map.removeLayer(endMarker);
+                endMarker = null;
+            }
+            if (polylineLayer) {
+                map.removeLayer(polylineLayer);
+                polylineLayer = null;
+            }
+            startCoords = null;
+            endCoords = null;
+            clickedCoords = null;
+            document.getElementById('routeTime').textContent = "-";
+            document.getElementById('routeDistance').textContent = "-";
+            console.log('所有标记已清空');
+        }, '清空标记').addTo(map);
+    
+        L.easyButton('fa-route', function(btn, map){
+            if (!startCoords || !endCoords) {
+                showWarning('请先选择起点和终点。', '警告');
+                return;
+            }
+
+            // 检查起点和终点是否相同
+            if (startCoords.lat === endCoords.lat && startCoords.lng === endCoords.lng) {
+                showWarning('起点和终点不能相同，请重新选择！', '警告');
+                // 移除终点 Marker 并重置
+                if (endMarker) {
+                    map.removeLayer(endMarker);
+                    endMarker = null;
+                }
+                endCoords = null;
+                return;
+            }
+
+            // 发送路径规划请求
+            sendCoordsToBackend();
+        }, '路径规划').addTo(map);
+        L.easyButton('fa-shapes', function(btn, map){
+        if (display_search == 1) display_search = 0;
+        else display_search = 1;
+}, '切换搜索范围').addTo(map);
+    function showSuccess(message, title) {
+        toastr.success(message, title);
+    }
+
+    function showError(message, title) {
+        toastr.error(message, title);
+    }
+
+    function showWarning(message, title) {
+        toastr.warning(message, title);
+    }
+    // WebSocket 连接
+    var ws = new WebSocket("ws://localhost:18080/ws");
+
+    ws.onopen = function() {
+        console.log('WebSocket 连接已打开');
+    };
+
+    ws.onmessage = function(event) {
+        loadingIndicator.style.display = 'none';
+        try {
+            // 假设收到的是类似 [[lat1, lon1], [lat2, lon2], ...] 这样的坐标数组
+            // console.log(Array.isArray(data));
+            console.log(event.data);
+            if (event.data == "无法找到从起点到终点的路径.") {
+            // 接收到的是错误消息
+                showEroor(event.data, '错误'); // 弹出错误提示
+
+            // 移除已有的 polylineLayer，避免显示错误的路径
+                if (polylineLayer) {
+                    map.removeLayer(polylineLayer);
+                    polylineLayer = null;
+                }
+
+            // 重置规划耗时显示
+                document.getElementById('routeTime').textContent = "-";
+                document.getElementById('routeDistance').textContent = "-";
+            }
+            else{
+                var data = JSON.parse(event.data);
+                if (data.path && Array.isArray(data.path) && data.path.length > 0) {
+            // 接收到的是路径数据
+            var routeTimeString = data.time || "-";
+            var routeDistanceString = data.distance || "-";
+            var estimatedTime = data.estimatedTime || "-";
+            var searchPoints = data.searchPoints || [];
+
+            // 移除已有的 polylineLayer 和 polygonLayer，避免重复绘制
+            if (typeof polylineLayer !== 'undefined' && polylineLayer) {
+                map.removeLayer(polylineLayer);
+            }
+            if (typeof polygonLayer !== 'undefined' && polygonLayer){
+                map.removeLayer(polygonLayer);
+            }
+
+            // 绘制新的 polyline
+            polylineLayer = L.polyline(data.path, {
+                color: 'red',
+                weight: 3,
+                smoothFactor: 3
+            }).addTo(map);
+
+            // 调整视图以适应线路范围
+            map.fitBounds(polylineLayer.getBounds(), { padding: [50, 50] });
+
+            // 显示时间和距离
+            document.getElementById('routeTime').textContent = routeTimeString;
+            document.getElementById('routeDistance').textContent = routeDistanceString;
+            // document.getElementById('estimatedTime').textContent = estimatedTime;
+
+            // 处理搜索点并绘制多边形
+            if (searchPoints.length > 0 && display_search) {
+                console.log("calc");
+                // 将搜索点转换为 GeoJSON 格式
+                var searchPointsGeoJSON = {
+                    "type": "Feature",
+                    "geometry": {
+                        "type": "MultiPoint",
+                        "coordinates": searchPoints.map(function(point) {
+                            return [point[1], point[0]]; // 转换为 [lng, lat]
+                        })
+                    }
+                };
+
+                // 计算凸包
+                var convexHull = turf.convex(searchPointsGeoJSON);
+
+                if (convexHull) {
+                    console.log("convex hull");
+                    var hullCoordinates = convexHull.geometry.coordinates[0].map(function(coord) {
+                        return [coord[1], coord[0]]; // 转换回 [lat, lng]
+                    });
+
+                    // 绘制多边形
+                    polygonLayer = L.polygon(hullCoordinates, {
+                        color: 'blue',
+                        fillColor: 'blue',
+                        fillOpacity: 0.2,
+                        weight: 2
+                    }).addTo(map);
+                } else {
+                    showWarning('无法计算搜索点的凸包。', '警告');
+                }
+            }
+
+            showSuccess('路径规划成功', '成功');
+            // } else {
+            //     console.error('接收到的数据格式不正确:', data);
+            //     showError('接收到的数据格式不正确', '错误');
+            }
+            }
+        }
+        catch (error) {
+            var errorMsg = event.data;
+        showError(errorMsg, '错误');
+
+        // 移除已有的 polylineLayer，避免显示错误的路径
+        if (polylineLayer) {
+            map.removeLayer(polylineLayer);
+            polylineLayer = null;
+        }
+        // if (polygonLayer) {
+        //     map.removeLayer(polygonLayer);
+        //     polygonLayer = null;
+        // }
+
+        // 重置规划耗时和距离显示
+        document.getElementById('routeTime').textContent = "-";
+        document.getElementById('routeDistance').textContent = "-";
+        // document.getElementById('estimatedTime').textContent = "-";
+
+        console.error('解析 WebSocket 消息时出错:', error);
+            }
+        document.querySelector('.fa-route').parentElement.style.pointerEvents = 'auto';
+    };
+
+    ws.onclose = function() {
+        console.log('WebSocket 连接已关闭');
+    };
+
+    // 全局变量，用于存储当前地图点击坐标、起点/终点坐标、以及 Marker 对象
+    var clickedCoords = null;   // 上一次地图点击的坐标
+    var startCoords = null;     // 选定的起点坐标
+    var endCoords = null;       // 选定的终点坐标
+    var startMarker = null;     // 起点 Marker
+    var endMarker = null;       // 终点 Marker
+
+    // 地图点击事件，记录当前点击的坐标到 clickedCoords
+    map.on('click', function(e) {
+        clickedCoords = e.latlng;
+        // marker = L.marker(e.latlng).addTo(map);
+        console.log('当前点击坐标：', clickedCoords);
+    });
+
+    var heuristicSlider = document.getElementById('heuristicSlider');
+    var heuristicValue = document.getElementById('heuristicValue');
+    var modeSelect = document.getElementById('modeSelect');
+
+    // 更新滑块值显示
+    heuristicSlider.addEventListener('input', function() {
+        heuristicValue.textContent = heuristicSlider.value;
+    });
+
+    modeSelect.addEventListener('change', function() {
+            if (modeSelect.value === "2" || modeSelect.value === "3" || modeSelect.value === "4") { // 假设单向A*及以上需要启发式系数
+                heuristicSlider.disabled = false;
             } else {
-                alert('WebSocket is not connected.');
+                heuristicSlider.disabled = true;
+                heuristicSlider.value = 2.5; // 重置为默认值
+                heuristicValue.textContent = heuristicSlider.value;
             }
         });
 
-        document.getElementById('close').addEventListener('click', () => {
-            if (ws) {
-                ws.close();
-            }
-        });
-    </script>
+        // 初始化滑块状态
+        if (modeSelect.value !== "2" && modeSelect.value !== "3") {
+            heuristicSlider.disabled = true;
+        }
+
+
+    // 将起点和终点坐标发送给后端的函数
+    function sendCoordsToBackend() {
+        var mode = document.getElementById('modeSelect').value;
+        var heuristic = parseFloat(document.getElementById('heuristicSlider').value);
+
+        var message = {
+            start_lat: startCoords.lat,
+            start_lon: startCoords.lng,
+            end_lat: endCoords.lat,
+            end_lon: endCoords.lng,
+            mode: mode,  // 在这里添加所选的算法模式
+            heuristic: heuristic,     // 启发式系数\
+            display_search: display_search
+        };
+        console.log('发送到后端的消息:', message);
+        ws.send(JSON.stringify(message));
+
+        loadingIndicator.style.display = 'block';
+        document.querySelector('.fa-route').parentElement.style.pointerEvents = 'none';
+    }
+
+    toastr.options = {
+            "closeButton": true,
+            "debug": false,
+            "newestOnTop": false,
+            "progressBar": true,
+            "positionClass": "toast-top-right",
+            "preventDuplicates": false,
+            "onclick": null,
+            "showDuration": "300",
+            "hideDuration": "1000",
+            "timeOut": "5000",
+            "extendedTimeOut": "1000",
+            "showEasing": "swing",
+            "hideEasing": "linear",
+            "showMethod": "fadeIn",
+            "hideMethod": "fadeOut"
+        };
+    
+</script>
+
 </body>
 </html>
