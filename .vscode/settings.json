@@ -93,7 +93,8 @@
         "numbers": "cpp",
         "semaphore": "cpp",
         "typeindex": "cpp",
-        "variant": "cpp"
+        "variant": "cpp",
+        "*.ipp": "cpp"
     },
     "cmake.automaticReconfigure": false,
     "cmake.configureOnEdit": false,

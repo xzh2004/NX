@@ -995,7 +995,13 @@ CMakeFiles/NX.dir/backend/src/main_app2.cpp.o: ../backend/src/main_app2.cpp \
   /usr/include/c++/11/thread \
   /usr/include/c++/11/bits/this_thread_sleep.h \
   ../backend/include/findnode.hpp \
-  ../backend/include/dijkstra.hpp
+  ../backend/include/dijkstra.hpp \
+  ../backend/include/AStar.hpp \
+  ../backend/include/FibonacciHeap.hpp \
+  /usr/include/c++/11/unordered_set \
+  /usr/include/c++/11/bits/unordered_set.h \
+  ../backend/include/reconstruct.hpp \
+  ../backend/include/jsonbuild.hpp
 
 CMakeFiles/NX.dir/backend/src/pugixml.cpp.o: ../backend/src/pugixml.cpp \
   /usr/include/stdc-predef.h \
@@ -1245,6 +1251,8 @@ CMakeFiles/NX.dir/backend/src/pugixml.cpp.o: ../backend/src/pugixml.cpp \
 
 /usr/include/c++/11/stdlib.h:
 
+../backend/include/AStar.hpp:
+
 /usr/include/c++/11/bits/this_thread_sleep.h:
 
 /usr/local/include/crow/http_server.h:
@@ -1447,6 +1455,8 @@ CMakeFiles/NX.dir/backend/src/pugixml.cpp.o: ../backend/src/pugixml.cpp \
 
 /usr/include/asio/detail/date_time_fwd.hpp:
 
+/usr/include/c++/11/unordered_set:
+
 /usr/include/asio/detail/timer_queue.hpp:
 
 /usr/include/asio/detail/chrono_time_traits.hpp:
@@ -1468,6 +1478,8 @@ CMakeFiles/NX.dir/backend/src/pugixml.cpp.o: ../backend/src/pugixml.cpp \
 /usr/include/asio/posix/descriptor_base.hpp:
 
 /usr/include/asio/detail/descriptor_read_op.hpp:
+
+../backend/include/jsonbuild.hpp:
 
 /usr/include/asio/detail/impl/descriptor_ops.ipp:
 
@@ -1504,6 +1516,8 @@ CMakeFiles/NX.dir/backend/src/pugixml.cpp.o: ../backend/src/pugixml.cpp \
 /usr/include/asio/basic_raw_socket.hpp:
 
 /usr/include/asio/basic_deadline_timer.hpp:
+
+../backend/include/reconstruct.hpp:
 
 /usr/include/asio/detail/impl/reactive_socket_service_base.ipp:
 
@@ -1808,6 +1822,8 @@ CMakeFiles/NX.dir/backend/src/pugixml.cpp.o: ../backend/src/pugixml.cpp \
 /usr/include/c++/11/utility:
 
 /usr/include/c++/11/ios:
+
+/usr/include/c++/11/bits/unordered_set.h:
 
 /usr/include/c++/11/bits/stl_vector.h:
 
@@ -2478,6 +2494,8 @@ CMakeFiles/NX.dir/backend/src/pugixml.cpp.o: ../backend/src/pugixml.cpp \
 /usr/lib/gcc/x86_64-linux-gnu/11/include/syslimits.h:
 
 /usr/include/linux/version.h:
+
+../backend/include/FibonacciHeap.hpp:
 
 /usr/include/asio/basic_datagram_socket.hpp:
 

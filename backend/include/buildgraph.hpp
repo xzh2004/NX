@@ -23,14 +23,25 @@ struct EDGE{
     int head[NODE_SIZE];
     void clear(){ cnt = 0; }
     inline Edge& operator[] (int i){return e[i];}
-    inline void push_back(ll from, ll to, float dis){
-        e[++cnt].nxt = head[nodes[from].num];
-        e[cnt].to = nodes[to].num;
+    inline void push_back(int from, int to, float dis){
+        e[++cnt].nxt = head[from];
+        e[cnt].to = to;
         e[cnt].weight = dis;
-        head[nodes[from].num] = cnt;
+        head[from] = cnt;
     }
     int size(){ return cnt;}
-} graph;
+} graph, rev_graph;
+
+int search_points[NODE_SIZE];
+int search_cnt;
+
+// 搜索节点
+void search_nodes() {
+    search_cnt = 0;
+    for (auto it = nodes.begin(); it != nodes.end(); ++it) {
+        search_points[search_cnt++] = it->first;
+    }
+}
 
 // 构建图的邻接表
 void build_graph() {
@@ -41,9 +52,14 @@ void build_graph() {
             long long from = way.node_refs[i];
             long long to = way.node_refs[i + 1];
             if (nodes.find(from) != nodes.end() && nodes.find(to) != nodes.end()) {
-                float distance = haversineDistance(nodes.at(from), nodes.at(to));
-                graph.push_back(from, to, distance);
-                if (!way.oneway) graph.push_back(to, from, distance); // 如果是双向路径
+                int x = nodes[from], y = nodes[to];
+                float distance = haversineDistance(node_set[x], node_set[y]);
+                graph.push_back(x, y, distance);
+                rev_graph.push_back(y, x, distance);
+                if (!way.oneway){
+                    graph.push_back(y, x, distance); // 如果是双向路径
+                    rev_graph.push_back(x, y, distance);
+                }
             }
         }
     }

@@ -832,4 +832,10 @@ CMakeFiles/NX.dir/backend/src/main_app2.cpp.o: \
  /usr/local/include/crow/app.h /usr/include/c++/11/thread \
  /usr/include/c++/11/bits/this_thread_sleep.h \
  /home/sirius/NX/backend/include/findnode.hpp \
- /home/sirius/NX/backend/include/dijkstra.hpp
+ /home/sirius/NX/backend/include/dijkstra.hpp \
+ /home/sirius/NX/backend/include/AStar.hpp \
+ /home/sirius/NX/backend/include/FibonacciHeap.hpp \
+ /usr/include/c++/11/unordered_set \
+ /usr/include/c++/11/bits/unordered_set.h \
+ /home/sirius/NX/backend/include/reconstruct.hpp \
+ /home/sirius/NX/backend/include/jsonbuild.hpp
